@@ -1,0 +1,75 @@
+<html>
+  <body>
+    <h1>Audio Transcription</h1>
+    <button onclick="startTranscription()">Start Transcription</button>
+    <p id="transcription"></p>
+<script>
+  var audioCtx;
+  var finalTranscription = '';
+  var stream;
+
+  function startTranscription() {
+    // Check if the browser supports the MediaStream API
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // Request access to the microphone
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function(microphone) {
+        // Assign the microphone input to the stream variable
+        stream = microphone;
+
+        // Check if the browser supports the Web Audio API
+        if (window.AudioContext || window.webkitAudioContext) {
+          // Create a new instance of the Web Audio API
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+          // Get the audio input
+          var audioInput = audioCtx.createMediaStreamSource(stream);
+
+          // Create a new instance of the Web Speech API
+          var speechRecognition = new webkitSpeechRecognition();
+          // Set the language
+          speechRecognition.lang = 'en-US';
+          // Set the continuous flag to true, which means the transcription will
+          // continue even if the user stops speaking for a moment
+          speechRecognition.continuous = true;
+          // Set the interim results flag to true, which means the transcription
+          // will be displayed as it is being done, rather than waiting until
+          // the user has finished speaking
+          speechRecognition.interimResults = true;
+          // Start the transcription
+          speechRecognition.start();
+          // Set the onresult event to update the transcription as it happens
+          speechRecognition.onresult = function(event) {
+            // Get the interim transcription
+            var interimTranscription = '';
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+              var transcript = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                // If the transcription is final, append it to the finalTranscription
+                // variable and set the interimTranscription to an empty string
+                finalTranscription += transcript;
+                interimTranscription = '';
+              } else {
+                // If the transcription is interim, append it to the
+                // interimTranscription variable
+                interimTranscription += transcript;
+              }
+            }
+            // Update the transcription on the page
+            document.getElementById('transcription').textContent = finalTranscription + interimTranscription;
+          }
+        } else {
+          // If the browser does not support the Web Audio API, display an error message
+          alert('Sorry, your browser does not support the Web Audio API');
+        }
+      }).catch(function(error) {
+        // If there is an error accessing the microphone, display an error message
+        alert('There was an error accessing the microphone: ' + error);
+      });
+    } else {
+      // If the browser does not support the MediaStream API, display an error
+          alert('Sorry, your browser does not support the Web Audio API');
+        }
+      }
+    </script>
+  </body>
+</html>
